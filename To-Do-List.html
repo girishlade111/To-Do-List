@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Ensure proper viewport scaling for a native feel -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile App (Final)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Prevent bouncing scroll on iOS -->
+    <style>
+        html, body {
+            overscroll-behavior-y: contain;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+    <style>
+        /* CSS Variables for Theming */
+        :root {
+            --primary-color: #4a90e2; /* Blue */
+            --secondary-color: #50e3c2; /* Teal */
+            --background-light: #f7f9fc;
+            --background-dark: #1a1d2b;
+            --card-bg-light: #ffffff;
+            --card-bg-dark: #252a41;
+            --text-light: #212529; /* Darker text for light mode */
+            --text-dark: #f1f1f1; /* Brighter text for dark mode */
+            --text-muted-light: #6c757d;
+            --text-muted-dark: #a0a8b4;
+            --border-light: #dee2e6; /* Slightly darker border */
+            --border-dark: #3a415c;
+            --shadow-light: rgba(90, 110, 130, 0.1); /* Softer shadow */
+            --shadow-dark: rgba(0, 0, 0, 0.2);
+            --active-nav-bg-light: #e0eaf7;
+            --active-nav-bg-dark: #353c5b;
+
+            /* Apply initial theme */
+            --background: var(--background-light);
+            --card-bg: var(--card-bg-light);
+            --text-color: var(--text-light);
+            --text-muted: var(--text-muted-light);
+            --border-color: var(--border-light);
+            --shadow-color: var(--shadow-light);
+            --nav-active-bg: var(--active-nav-bg-light);
+        }
+
+        body.dark-mode {
+            --background: var(--background-dark);
+            --card-bg: var(--card-bg-dark);
+            --text-color: var(--text-dark);
+            --text-muted: var(--text-muted-dark);
+            --border-color: var(--border-dark);
+            --shadow-color: var(--shadow-dark);
+            --nav-active-bg: var(--active-nav-bg-dark);
+        }
+
+        /* Basic Reset & Body Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background); /* Body takes app background */
+            transition: background-color 0.3s ease;
+            color: var(--text-color);
+            /* Removed flex centering to make app fill viewport */
+            height: 100%; /* Ensure body takes full height */
+            overflow: hidden; /* Prevent body scrolling */
+        }
+
+        /* Mobile Screen Container - Fills viewport */
+        .mobile-screen {
+            width: 100%;
+            height: 100%; /* Fill viewport height */
+            /* Optional: Add max-width for desktop viewing simulation */
+            max-width: 450px;
+            margin: 0 auto; /* Center if max-width is applied */
+
+            background-color: var(--background);
+            /* border-radius: 35px; */ /* Removed border-radius for native feel */
+            /* box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25); */ /* Shadow might not be needed */
+            overflow: hidden; /* Important to contain elements */
+            display: flex;
+            flex-direction: column; /* Key for fixed footer */
+            position: relative; /* Needed for modals & FAB */
+            transition: background-color 0.3s ease;
+        }
+
+        /* App Content Area - Takes remaining space and scrolls */
+        .app-content {
+            flex-grow: 1; /* Allows this area to expand */
+            overflow-y: auto; /* Enables vertical scrolling */
+            position: relative; /* Establish stacking context */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            /* Hide scrollbar */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .app-content::-webkit-scrollbar { /* Chrome, Safari, Opera */
+            display: none;
+        }
+
+        /* Individual Screens */
+        .screen {
+            display: none; /* Hide screens by default */
+            /* Adjusted padding: Less top, more bottom for FAB */
+            padding: 15px 15px 85px 15px;
+            animation: fadeIn 0.3s ease-in-out;
+            min-height: 100%; /* Ensure screen takes at least content height */
+        }
+
+        .screen.active {
+            display: block; /* Show active screen */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; /* transform: translateY(5px); */ } /* Simpler fade */
+            to { opacity: 1; /* transform: translateY(0); */ }
+        }
+
+        /* General Button Styling */
+        button, .button-like {
+             cursor: pointer;
+             transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, transform 0.1s ease;
+             font-family: inherit;
+             border: none; /* Default no border */
+             background: none; /* Default no background */
+        }
+        button:active, .button-like:active {
+             transform: scale(0.96); /* Slightly more pronounced click feedback */
+        }
+        button:disabled {
+             cursor: not-allowed;
+             opacity: 0.6;
+        }
+
+
+        /* --- Home Screen --- */
+        #home-screen .status-bar {
+            background: linear-gradient(135deg, var(--primary-color), #6ab1f8);
+            color: white;
+            padding: 25px 20px; /* Adjusted padding */
+            border-radius: 16px; /* Keep some radius here */
+            margin: 0px 0px 20px 0px; /* Adjust margin */
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.25);
+        }
+        #home-screen .status-bar h1 {
+            font-weight: 700;
+            font-size: 24px; /* Slightly smaller */
+            margin-bottom: 6px;
+        }
+        #home-screen .status-bar p {
+            font-size: 13px;
+            opacity: 0.95;
+            margin-bottom: 8px;
+        }
+        #home-screen .status-bar .time-date {
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        #home-screen .status-bar .time-date i {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        #home-screen .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px; /* Slightly less gap */
+            background-color: var(--card-bg);
+            padding: 12px;
+            border-radius: 16px;
+            box-shadow: 0 3px 12px var(--shadow-color);
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        #home-screen .quick-actions button {
+            color: var(--text-color);
+            font-size: 11px; /* Smaller text */
+            font-weight: 500;
+            text-align: center;
+            padding: 8px 0; /* Add padding */
+            border-radius: 10px; /* Add radius to button */
+            transition: color 0.3s ease, background-color 0.2s ease;
+        }
+         #home-screen .quick-actions button:hover {
+             background-color: var(--active-nav-bg);
+         }
+        #home-screen .quick-actions button i {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+            width: 40px; /* Smaller icon bg */
+            height: 40px;
+            line-height: 40px;
+            background-color: var(--nav-active-bg);
+            border-radius: 50%;
+            margin-left: auto;
+            margin-right: auto;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        #home-screen .summary-card {
+            background-color: var(--card-bg);
+            padding: 18px 20px; /* Adjusted padding */
+            border-radius: 16px;
+            margin-bottom: 15px; /* Less margin */
+            box-shadow: 0 3px 12px var(--shadow-color);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+        }
+         #home-screen .summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px var(--shadow-color);
+         }
+        #home-screen .summary-card h2 {
+            font-size: 17px; /* Slightly smaller */
+            font-weight: 500;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #home-screen .summary-card .card-icon {
+            font-size: 16px;
+            color: var(--primary-color);
+        }
+         #home-screen .summary-card .item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+         #home-screen .summary-card .item:last-child {
+             margin-bottom: 0;
+         }
+         #home-screen .summary-card .item i {
+             margin-right: 10px;
+             color: var(--primary-color);
+             width: 18px; /* Align icons */
+             text-align: center;
+         }
+         #home-screen .summary-card .item .count {
+            font-weight: 500;
+            color: var(--text-color);
+            background-color: var(--active-nav-bg);
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-size: 12px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+         }
+         #home-screen .summary-card p { /* Style for placeholder text like 'No notes yet' */
+             font-size: 13px;
+             color: var(--text-muted);
+             text-align: center;
+             margin-top: 10px;
+             font-style: italic;
+             transition: color 0.3s ease;
+         }
+
+
+        /* --- To Do List Screen --- */
+        #todo-screen .todo-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 15px 10px 15px; /* Adjusted padding */
+            margin: -15px -15px 15px -15px; /* Adjust margin to match padding */
+            position: sticky;
+            top: -1px; /* Stick just below the top edge */
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #todo-screen .todo-header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+        #todo-screen .todo-header p {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        #todo-screen .filter-tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 5px;
+        }
+        #todo-screen .filter-tabs button {
+            color: rgba(255, 255, 255, 0.75);
+            padding: 8px 5px;
+            font-size: 13px;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s ease;
+            border-radius: 6px; /* Add subtle radius */
+        }
+        #todo-screen .filter-tabs button:hover {
+             color: white;
+             background-color: rgba(255, 255, 255, 0.1); /* Subtle hover */
+        }
+        #todo-screen .filter-tabs button.active {
+            color: white;
+            font-weight: 700;
+             background-color: transparent; /* Remove background for active */
+        }
+        #todo-screen .filter-tabs button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; /* Position underline slightly below */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50%; /* Adjust underline */
+            height: 3px;
+            background-color: white;
+            border-radius: 2px;
+            animation: growUnderline 0.3s ease;
+        }
+        @keyframes growUnderline {
+             from { width: 0; }
+             to { width: 50%; }
+        }
+
+        .task-list {
+            list-style: none;
+            padding: 0;
+        }
+        .task-item {
+            background-color: var(--card-bg);
+            padding: 12px 15px; /* Adjusted padding */
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 6px var(--shadow-color);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+        }
+         .task-item:hover {
+             /* transform: translateX(4px); */ /* Removed horizontal shift */
+             box-shadow: 0 4px 10px var(--shadow-color);
+         }
+        .task-item.completed {
+             opacity: 0.7;
+        }
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+        .task-item .task-info {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            margin-right: 8px;
+            overflow: hidden;
+        }
+        .task-item input[type="checkbox"] {
+            margin-right: 12px;
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+            cursor: pointer;
+        }
+        .task-item .task-text {
+            font-size: 15px;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+             white-space: nowrap;
+             overflow: hidden;
+             text-overflow: ellipsis;
+        }
+         .task-item .task-reminder {
+             font-size: 10px; /* Smaller */
+             color: var(--text-muted);
+             margin-left: 6px;
+             display: flex;
+             align-items: center;
+             white-space: nowrap;
+             flex-shrink: 0;
+         }
+         .task-item .task-reminder i {
+             margin-right: 3px;
+             font-size: 11px; /* Match text size */
+         }
+
+        .task-item .task-actions { /* Container for priority and delete */
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .task-item .task-priority {
+            font-size: 9px; /* Smaller */
+            padding: 3px 7px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        /* Priority colors refined */
+        .task-priority.low { background-color: #d1fadf; color: #1a7f37; }
+        .task-priority.medium { background-color: #fff3cd; color: #856404; }
+        .task-priority.high { background-color: #f8d7da; color: #721c24; }
+
+        body.dark-mode .task-priority.low { background-color: #2a4a3a; color: #a3e6b8; }
+        body.dark-mode .task-priority.medium { background-color: #5c4b1c; color: #ffeeba; }
+        body.dark-mode .task-priority.high { background-color: #582b30; color: #f5c6cb; }
+
+        .task-item .delete-btn {
+             color: #f06a6a;
+             font-size: 15px;
+             padding: 4px; /* Smaller tap area */
+             line-height: 1;
+        }
+        .task-item .delete-btn:hover {
+            color: #e53e3e;
+        }
+
+        .no-items-message {
+             text-align: center;
+             margin-top: 40px;
+             color: var(--text-muted);
+             transition: color 0.3s ease;
+             font-size: 14px;
+        }
+        .no-items-message i {
+            font-size: 40px;
+            display: block;
+            margin-bottom: 12px;
+            color: var(--primary-color);
+            opacity: 0.5; /* Subtler icon */
+        }
+
+
+        /* --- Notes Screen --- */
+         #notes-screen .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 5px;
+         }
+         #notes-screen h1 {
+             font-size: 22px;
+             font-weight: 700;
+             color: var(--primary-color);
+         }
+         #notes-screen .search-icon {
+             font-size: 20px;
+             color: var(--text-muted);
+             cursor: pointer;
+             padding: 5px;
+             transition: color 0.3s ease;
+         }
+         #notes-screen .search-icon:hover {
+             color: var(--primary-color);
+         }
+
+        .note-list {
+            list-style: none;
+            padding: 0;
+        }
+        .note-item {
+            background-color: var(--card-bg);
+            padding: 15px 18px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px var(--shadow-color);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+        }
+        .note-item:hover {
+            /* transform: translateY(-2px); */ /* Removed lift */
+            box-shadow: 0 4px 10px var(--shadow-color);
+        }
+
+        .note-item h3 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .note-item p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            transition: color 0.3s ease;
+        }
+        .note-item .note-footer {
+            font-size: 11px; /* Smaller */
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0.9;
+            transition: color 0.3s ease;
+        }
+         .note-item .note-footer span { /* Timestamp */
+            display: flex;
+            align-items: center;
+         }
+         .note-item .note-footer i {
+             margin-right: 5px;
+             font-size: 12px;
+         }
+         .note-item .delete-btn { /* Re-use delete style */
+             color: #f06a6a;
+             font-size: 14px;
+             padding: 4px;
+             line-height: 1;
+         }
+         .note-item .delete-btn:hover {
+            color: #e53e3e;
+        }
+
+
+        /* --- Settings Screen --- */
+        #settings-screen h1, #more-screen h1 { /* Style for both */
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: var(--primary-color);
+            padding: 0 5px;
+        }
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5px; /* Adjusted padding */
+            border-bottom: 1px solid var(--border-color);
+            transition: border-color 0.3s ease, background-color 0.2s ease;
+            cursor: pointer;
+        }
+         .setting-item:hover {
+            background-color: rgba(0,0,0,0.02);
+         }
+        body.dark-mode .setting-item:hover {
+             background-color: rgba(255,255,255,0.03);
+        }
+        .setting-item:last-of-type {
+            border-bottom: none;
+        }
+        .setting-item .setting-label {
+            display: flex;
+            align-items: center;
+            font-size: 15px; /* Slightly smaller */
+            font-weight: 400;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+            flex-grow: 1; /* Allow label to take space */
+        }
+        .setting-item .setting-label i {
+            margin-right: 15px;
+            font-size: 18px;
+            width: 22px; /* Align icons */
+            text-align: center;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+        /* Custom Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 26px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+         /* Button styled as setting item */
+        .setting-button {
+            background: none;
+            border: none;
+            color: inherit; /* Use text color from parent */
+            font-size: inherit;
+            font-weight: inherit;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+             padding: 0;
+             line-height: inherit; /* Match line height */
+        }
+         .setting-button:hover {
+             /* Handled by .setting-item:hover */
+         }
+         .setting-item > i { /* Chevron icon */
+             font-size: 14px;
+             color: var(--text-muted);
+             margin-left: 10px;
+         }
+
+
+        /* --- More Screen --- */
+        #more-screen p {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 0 5px;
+        }
+        #more-screen .more-links {
+            margin-top: 20px;
+        }
+
+
+        /* --- Bottom Navigation (Fixed) --- */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            padding: 6px 0; /* Adjusted padding */
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -2px 8px var(--shadow-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            flex-shrink: 0; /* Prevent nav from shrinking */
+        }
+        .nav-item {
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 500;
+            text-align: center;
+            padding: 5px 8px; /* Adjusted padding */
+            border-radius: 8px;
+            transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+            flex-grow: 1;
+            flex-basis: 0; /* Ensure equal width */
+        }
+        .nav-item i {
+            display: block;
+            font-size: 18px; /* Slightly smaller icons */
+            margin-bottom: 3px;
+        }
+        .nav-item:hover {
+            color: var(--primary-color);
+        }
+        .nav-item.active {
+            color: var(--primary-color);
+            background-color: var(--nav-active-bg);
+        }
+        .nav-item.active:active { /* Prevent scale on active item click */
+            transform: scale(1);
+        }
+
+        /* --- Floating Action Button (FAB) --- */
+        .fab {
+            position: absolute;
+            bottom: 70px; /* Adjusted for nav bar */
+            right: 20px; /* Adjusted position */
+            background-color: var(--primary-color);
+            color: white;
+            width: 52px; /* Slightly smaller */
+            height: 52px;
+            border-radius: 50%;
+            font-size: 22px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease; /* Bounce effect */
+            z-index: 500; /* Above content, below modal */
+            opacity: 0;
+            transform: scale(0.5) translateY(10px);
+            pointer-events: none;
+        }
+        .fab.visible {
+             opacity: 1;
+             transform: scale(1) translateY(0);
+             pointer-events: auto;
+        }
+        .fab:hover {
+            background-color: #3a80d2;
+            /* transform: scale(1.05); */ /* Handled by visible state */
+        }
+         .fab.visible:hover {
+             transform: scale(1.05); /* Apply hover scale only when visible */
+         }
+        .fab:active {
+             transform: scale(0.92) !important; /* Ensure active scale works */
+             transition-duration: 0.1s;
+        }
+
+
+        /* --- Modals --- */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.55); /* Slightly less dark overlay */
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.25s ease, visibility 0s 0.25s;
+        }
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 20px 20px 25px 20px; /* Adjusted padding */
+            border-radius: 18px 18px 0 0;
+            width: 100%;
+            max-width: 100%;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(100%);
+            transition: background-color 0.3s ease, transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+            max-height: 85vh; /* Limit modal height */
+            overflow-y: auto; /* Allow modal content to scroll if needed */
+        }
+        .modal.active .modal-content {
+             transform: translateY(0);
+        }
+
+
+        .modal h2 {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+            text-align: center;
+        }
+        .modal .form-group {
+            margin-bottom: 15px;
+        }
+        .modal label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+        .modal input[type="text"],
+        .modal input[type="datetime-local"],
+        .modal textarea,
+        .modal select {
+            width: 100%;
+            padding: 12px; /* Adjusted padding */
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 15px;
+            background-color: var(--background);
+            color: var(--text-color);
+            transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.2s ease;
+        }
+         /* Enhanced focus style */
+        .modal input[type="text"]:focus,
+        .modal input[type="datetime-local"]:focus,
+        .modal textarea:focus,
+        .modal select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2); /* Thinner focus ring */
+        }
+        .modal textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Priority Buttons */
+        .priority-options {
+            display: flex;
+            gap: 8px; /* Less gap */
+            margin-bottom: 15px;
+        }
+        .priority-options button {
+            flex-grow: 1;
+            padding: 10px; /* Adjusted padding */
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            font-size: 12px; /* Smaller text */
+            font-weight: 700;
+        }
+         .priority-options button.selected {
+             border-color: var(--primary-color);
+             background-color: var(--active-nav-bg);
+             color: var(--primary-color);
+         }
+          .priority-options button.low.selected { border-color: #1a7f37; background-color: #d1fadf; color: #1a7f37; }
+          .priority-options button.medium.selected { border-color: #856404; background-color: #fff3cd; color: #856404; }
+          .priority-options button.high.selected { border-color: #721c24; background-color: #f8d7da; color: #721c24; }
+
+          body.dark-mode .priority-options button.selected { background-color: var(--nav-active-bg); }
+          body.dark-mode .priority-options button.low.selected { border-color: #a3e6b8; background-color: #2a4a3a; color: #a3e6b8; }
+          body.dark-mode .priority-options button.medium.selected { border-color: #ffeeba; background-color: #5c4b1c; color: #ffeeba; }
+          body.dark-mode .priority-options button.high.selected { border-color: #f5c6cb; background-color: #582b30; color: #f5c6cb; }
+
+         /* Add Reminder Button */
+         .add-reminder-btn {
+             color: var(--primary-color);
+             font-size: 14px;
+             font-weight: 500;
+             padding: 6px 0;
+             display: flex;
+             align-items: center;
+         }
+         .add-reminder-btn i {
+             margin-right: 6px;
+         }
+         #reminder-input-group {
+            display: none;
+            margin-top: 8px;
+         }
+
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px; /* Less gap */
+            margin-top: 20px;
+        }
+        .modal-actions button {
+            padding: 12px 15px; /* Adjusted padding */
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .modal-actions .btn-cancel {
+            background-color: var(--background);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+         .modal-actions .btn-cancel:hover {
+             background-color: var(--border-color);
+             color: var(--text-color);
+         }
+        .modal-actions .btn-add {
+            background-color: var(--primary-color);
+            border: none;
+            color: white;
+        }
+        .modal-actions .btn-add:hover {
+            background-color: #3a80d2;
+        }
+         .modal-actions .btn-add:disabled {
+            background-color: #a0c3e8;
+            opacity: 0.7;
+         }
+
+    </style>
+</head>
+<body>
+    <!-- Mobile Screen Container -->
+    <div class="mobile-screen" id="app-container">
+
+        <!-- App Content Area (Scrollable) -->
+        <div class="app-content">
+            <!-- Home Screen -->
+            <div id="home-screen" class="screen active">
+                <!-- Status Bar -->
+                <div class="status-bar">
+                    <h1 id="greeting">Good morning</h1>
+                    <p class="time-date">
+                        <i class="fa-regular fa-clock"></i>
+                        <span id="current-time-date">--:-- AM - --/--/----</span>
+                    </p>
+                    <p id="day-progress">--% of day complete • -- hours remaining</p>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button onclick="showAddTaskModal()">
+                        <i class="fa-solid fa-circle-plus"></i>
+                        New Todo
+                    </button>
+                    <button onclick="showAddNoteModal()">
+                        <i class="fa-regular fa-pen-to-square"></i>
+                        New Note
+                    </button>
+                    <button onclick="navigateTo('more-screen')"> <!-- Changed target -->
+                        <i class="fa-solid fa-ellipsis-h"></i>
+                        More
+                    </button>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-card" onclick="navigateTo('todo-screen')">
+                    <h2>
+                        <span>To Do List</span>
+                        <i class="card-icon fa-solid fa-list-check"></i>
+                    </h2>
+                    <div class="item">
+                        <span><i class="fa-regular fa-hourglass-half"></i> Pending</span>
+                        <span class="count" id="pending-count">0</span>
+                    </div>
+                    <div class="item">
+                        <span><i class="fa-regular fa-circle-check"></i> Completed</span>
+                         <span class="count" id="completed-count">0</span>
+                    </div>
+                </div>
+
+                <div class="summary-card" onclick="navigateTo('notes-screen')">
+                    <h2>
+                        <span>Notes</span>
+                        <i class="card-icon fa-solid fa-book-open"></i>
+                     </h2>
+                     <p id="notes-summary">No notes yet</p>
+                </div>
+
+                 <div class="summary-card"> <!-- Example Static Card -->
+                    <h2>
+                        <span>YouTube Strategy</span>
+                        <i class="card-icon fa-brands fa-youtube" style="color: #ff0000;"></i>
+                     </h2>
+                     <p>Videos Created: 0</p>
+                </div>
+            </div>
+
+            <!-- To Do List Screen -->
+            <div id="todo-screen" class="screen">
+                <div class="todo-header">
+                     <h1>Tasks</h1>
+                     <p><span id="remaining-tasks-count">0</span> remaining</p>
+                     <div class="filter-tabs">
+                        <button class="active" data-filter="all">All</button>
+                        <button data-filter="today">Today</button>
+                        <button data-filter="upcoming">Upcoming</button>
+                        <button data-filter="completed">Completed</button>
+                     </div>
+                </div>
+                <ul class="task-list" id="task-list-items">
+                   <!-- Task items will be injected here by JS -->
+                </ul>
+                 <p class="no-items-message" id="no-tasks-message">
+                    <i class="fa-regular fa-clipboard"></i>
+                    No tasks found. Add one below!
+                </p>
+            </div>
+
+            <!-- Notes Screen -->
+            <div id="notes-screen" class="screen">
+                 <div class="notes-header">
+                    <h1>Notes</h1>
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                 </div>
+                <ul class="note-list" id="note-list-items">
+                   <!-- Note items will be injected here by JS -->
+                </ul>
+                 <p class="no-items-message" id="no-notes-message">
+                    <i class="fa-regular fa-lightbulb"></i>
+                    No notes found. Add one below!
+                </p>
+            </div>
+
+            <!-- More Screen (NEW) -->
+            <div id="more-screen" class="screen">
+                <h1>More Options</h1>
+                <p>This section can contain additional features, links, or information.</p>
+
+                <div class="more-links">
+                    <div class="setting-item">
+                        <span class="setting-label">
+                           <i class="fa-solid fa-box-archive"></i>
+                           <button class="setting-button">Archived Items</button>
+                       </span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">
+                           <i class="fa-solid fa-tags"></i>
+                           <button class="setting-button">Manage Categories</button>
+                       </span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                     <div class="setting-item" onclick="navigateTo('settings-screen')"> <!-- Link to settings from here -->
+                        <span class="setting-label">
+                           <i class="fa-solid fa-gear"></i>
+                           <button class="setting-button">App Settings</button>
+                       </span>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Screen -->
+            <div id="settings-screen" class="screen">
+                <h1>Settings</h1>
+                <div class="setting-item">
+                    <span class="setting-label"><i class="fa-regular fa-bell"></i> Notifications</span>
+                    <label class="switch">
+                        <input type="checkbox" id="notifications-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label"><i class="fa-regular fa-moon"></i> Dark Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="dark-mode-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                     <span class="setting-label">
+                        <i class="fa-solid fa-download"></i>
+                        <button class="setting-button" onclick="exportData()">Export All Data</button>
+                    </span>
+                     <!-- No chevron needed for direct action -->
+                </div>
+                <div class="setting-item">
+                     <span class="setting-label">
+                        <i class="fa-regular fa-circle-question"></i>
+                        <button class="setting-button">Help & Feedback</button>
+                    </span>
+                     <i class="fa-solid fa-chevron-right"></i>
+                </div>
+                 <div class="setting-item">
+                     <span class="setting-label">
+                        <i class="fa-solid fa-info-circle"></i>
+                        <button class="setting-button">About</button>
+                    </span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+            </div>
+        </div> <!-- End app-content -->
+
+        <!-- Floating Action Button (FAB) -->
+        <button class="fab" id="fab-button" aria-label="Add Item">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+
+        <!-- Bottom Navigation Bar (Fixed at the bottom) -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-screen="home-screen">
+                <i class="fa-solid fa-house"></i> Home
+            </button>
+            <button class="nav-item" data-screen="todo-screen">
+                <i class="fa-solid fa-list-check"></i> To Do List
+            </button>
+            <button class="nav-item" data-screen="notes-screen">
+                <i class="fa-regular fa-note-sticky"></i> Note
+            </button>
+            <button class="nav-item" data-screen="settings-screen">
+                <i class="fa-solid fa-gear"></i> Setting
+            </button>
+        </nav>
+
+        <!-- Add Task Modal -->
+        <div id="add-task-modal" class="modal">
+            <div class="modal-content">
+                <h2>New Task</h2>
+                <div class="form-group">
+                    <input type="text" id="task-input" placeholder="What needs to be done?">
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <div class="priority-options" id="priority-buttons">
+                        <button data-priority="low" class="low">LOW</button>
+                        <button data-priority="medium" class="medium selected">MEDIUM</button>
+                        <button data-priority="high" class="high">HIGH</button>
+                    </div>
+                </div>
+                 <div class="form-group">
+                    <label for="task-category">Category</label>
+                    <select id="task-category">
+                        <option value="personal">Personal</option>
+                        <option value="work">Work</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="errands">Errands</option>
+                        <option value="ideas">Ideas</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                     <button class="add-reminder-btn" onclick="toggleReminderInput()">
+                         <i class="fa-regular fa-bell"></i> Add Reminder
+                     </button>
+                     <div id="reminder-input-group">
+                          <label for="task-reminder">Reminder time</label>
+                          <input type="datetime-local" id="task-reminder">
+                     </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeModal('add-task-modal')">Cancel</button>
+                    <button class="btn-add" id="add-task-button" disabled>Add Task</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Note Modal -->
+         <div id="add-note-modal" class="modal">
+            <div class="modal-content">
+                <h2>New Note</h2>
+                <div class="form-group">
+                    <input type="text" id="note-title-input" placeholder="Note Title (Optional)">
+                </div>
+                <div class="form-group">
+                     <textarea id="note-content-input" placeholder="Start writing your note..."></textarea>
+                </div>
+                 <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeModal('add-note-modal')">Cancel</button>
+                    <button class="btn-add" id="add-note-button" disabled>Add Note</button>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- End mobile-screen -->
+
+    <script>
+        // --- DOM Elements Cache ---
+        const appContainer = document.getElementById('app-container');
+        const appContent = document.querySelector('.app-content');
+        const screens = document.querySelectorAll('.screen');
+        const navItems = document.querySelectorAll('.nav-item');
+        const fabButton = document.getElementById('fab-button');
+        const taskList = document.getElementById('task-list-items');
+        const noteList = document.getElementById('note-list-items');
+        const taskInput = document.getElementById('task-input');
+        const noteTitleInput = document.getElementById('note-title-input');
+        const noteContentInput = document.getElementById('note-content-input');
+        const addTaskModalEl = document.getElementById('add-task-modal');
+        const addNoteModalEl = document.getElementById('add-note-modal');
+        const addTaskButton = document.getElementById('add-task-button');
+        const addNoteButton = document.getElementById('add-note-button');
+        const priorityButtons = document.querySelectorAll('#priority-buttons button');
+        const taskCategory = document.getElementById('task-category');
+        const taskReminderInput = document.getElementById('task-reminder');
+        const reminderInputGroup = document.getElementById('reminder-input-group');
+        const remainingTasksCount = document.getElementById('remaining-tasks-count');
+        const pendingCountHome = document.getElementById('pending-count');
+        const completedCountHome = document.getElementById('completed-count');
+        const notesSummaryHome = document.getElementById('notes-summary');
+        const noTasksMessage = document.getElementById('no-tasks-message');
+        const noNotesMessage = document.getElementById('no-notes-message');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const greetingEl = document.getElementById('greeting');
+        const timeDateEl = document.getElementById('current-time-date');
+        const dayProgressEl = document.getElementById('day-progress');
+
+        // --- App State ---
+        let currentScreenId = 'home-screen';
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let notes = JSON.parse(localStorage.getItem('notes')) || [];
+        let selectedPriority = 'medium';
+
+        // --- Functions ---
+
+        /** Updates home screen time/greeting */
+        function updateDateTime() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours % 12 || 12;
+            const displayMinutes = minutes < 10 ? '0' + minutes : minutes;
+            const dateFormatted = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+            let greetingText = 'Good morning';
+            if (hours >= 12 && hours < 18) greetingText = 'Good afternoon';
+            else if (hours >= 18) greetingText = 'Good evening';
+            greetingEl.textContent = greetingText;
+
+            timeDateEl.textContent = `${displayHours}:${displayMinutes} ${ampm} - ${dateFormatted}`;
+
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const secondsPassed = (now - startOfDay) / 1000;
+            const totalSecondsInDay = 86400; // 24 * 60 * 60
+            const percentageComplete = ((secondsPassed / totalSecondsInDay) * 100).toFixed(1);
+            const hoursRemaining = Math.max(0, Math.floor((totalSecondsInDay - secondsPassed) / 3600));
+            dayProgressEl.textContent = `${percentageComplete}% of day complete • ${hoursRemaining} hours remaining`;
+        }
+
+        /** Navigates to a screen */
+        function navigateTo(screenId) {
+            if (currentScreenId === screenId) return;
+
+            const currentScreen = document.getElementById(currentScreenId);
+            if (currentScreen) currentScreen.classList.remove('active');
+
+            const nextScreen = document.getElementById(screenId);
+            if (nextScreen) {
+                nextScreen.classList.add('active');
+                appContent.scrollTop = 0; // Scroll to top on navigation
+            }
+
+            navItems.forEach(item => {
+                item.classList.toggle('active', item.dataset.screen === screenId);
+            });
+
+            currentScreenId = screenId;
+            updateFabVisibility();
+        }
+
+        /** Updates FAB visibility */
+        function updateFabVisibility() {
+            // Show FAB only on ToDo and Notes screens
+            const shouldShowFab = (currentScreenId === 'todo-screen' || currentScreenId === 'notes-screen');
+            if (shouldShowFab) {
+                fabButton.classList.add('visible');
+                fabButton.onclick = (currentScreenId === 'todo-screen') ? showAddTaskModal : showAddNoteModal;
+            } else {
+                fabButton.classList.remove('visible');
+            }
+        }
+
+        // --- Modal Handling ---
+        function openModal(modalElement) {
+            modalElement.classList.add('active');
+            // Prevent background scrolling when modal is open
+            document.body.style.overflow = 'hidden';
+            appContent.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            const modalElement = document.getElementById(modalId);
+            if (modalElement) {
+                 modalElement.classList.remove('active');
+                 // Restore background scrolling
+                 document.body.style.overflow = '';
+                 appContent.style.overflow = 'auto'; // Or 'auto' if needed
+
+                 // Bug Fix: Ensure FAB state is correct after modal closes
+                 updateFabVisibility();
+
+                 // Delay form reset until animation is complete
+                 setTimeout(() => {
+                     if (modalId === 'add-task-modal') resetTaskForm();
+                     if (modalId === 'add-note-modal') resetNoteForm();
+                 }, 250); // Match modal transition duration
+            }
+        }
+
+        function showAddTaskModal() {
+            resetTaskForm();
+            openModal(addTaskModalEl);
+            setTimeout(() => taskInput.focus(), 50); // Short delay for focus
+        }
+
+        function showAddNoteModal() {
+            resetNoteForm();
+            openModal(addNoteModalEl);
+            setTimeout(() => noteContentInput.focus(), 50);
+        }
+
+        function resetTaskForm() {
+             taskInput.value = '';
+             selectedPriority = 'medium';
+             priorityButtons.forEach(btn => btn.classList.remove('selected'));
+             document.querySelector('#priority-buttons button[data-priority="medium"]').classList.add('selected');
+             taskCategory.value = 'personal';
+             taskReminderInput.value = '';
+             reminderInputGroup.style.display = 'none';
+             addTaskButton.disabled = true;
+        }
+        function resetNoteForm() {
+             noteTitleInput.value = '';
+             noteContentInput.value = '';
+             addNoteButton.disabled = true;
+        }
+
+        function toggleReminderInput() {
+            const isVisible = reminderInputGroup.style.display === 'block';
+            reminderInputGroup.style.display = isVisible ? 'none' : 'block';
+             if (isVisible) taskReminderInput.value = '';
+             else setTimeout(() => taskReminderInput.focus(), 50); // Focus when shown
+        }
+
+        priorityButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                priorityButtons.forEach(btn => btn.classList.remove('selected'));
+                e.target.classList.add('selected');
+                selectedPriority = e.target.dataset.priority;
+            });
+        });
+
+        taskInput.addEventListener('input', () => {
+            addTaskButton.disabled = taskInput.value.trim() === '';
+        });
+        noteContentInput.addEventListener('input', () => {
+             addNoteButton.disabled = noteContentInput.value.trim() === '';
+        });
+
+        // --- Data Handling ---
+        function saveData() {
+            try {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                localStorage.setItem('notes', JSON.stringify(notes));
+            } catch (e) { console.error("Error saving data:", e); }
+        }
+
+        /** Renders tasks list */
+        function renderTasks() {
+            taskList.innerHTML = '';
+            const pendingTasks = tasks.filter(task => !task.completed);
+            const completedTasks = tasks.filter(task => task.completed);
+
+            noTasksMessage.style.display = tasks.length === 0 ? 'block' : 'none';
+            taskList.style.display = tasks.length > 0 ? 'block' : 'none';
+
+            [...pendingTasks, ...completedTasks].forEach(task => {
+                taskList.appendChild(createTaskElement(task));
+            });
+            updateCounts();
+        }
+
+        /** Creates HTML for a single task */
+         function createTaskElement(task) {
+            const li = document.createElement('li');
+            li.className = `task-item ${task.completed ? 'completed' : ''}`;
+            li.dataset.id = task.id;
+
+            const taskInfo = document.createElement('div');
+            taskInfo.className = 'task-info';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = task.completed;
+            checkbox.title = task.completed ? 'Mark as pending' : 'Mark as complete';
+            checkbox.addEventListener('change', () => toggleTaskComplete(task.id));
+            taskInfo.appendChild(checkbox);
+            const taskText = document.createElement('span');
+            taskText.className = 'task-text';
+            taskText.textContent = task.text;
+            taskText.title = task.text;
+            taskInfo.appendChild(taskText);
+            if (task.reminder) {
+                const reminderSpan = document.createElement('span');
+                reminderSpan.className = 'task-reminder';
+                reminderSpan.innerHTML = `<i class="fa-regular fa-bell"></i> ${formatDateTime(task.reminder, true)}`;
+                reminderSpan.title = `Reminder: ${formatDateTime(task.reminder)}`;
+                taskInfo.appendChild(reminderSpan);
+            }
+            li.appendChild(taskInfo);
+
+            const taskActions = document.createElement('div');
+            taskActions.className = 'task-actions';
+            const prioritySpan = document.createElement('span');
+            prioritySpan.className = `task-priority ${task.priority}`;
+            prioritySpan.textContent = task.priority;
+            prioritySpan.title = `Priority: ${task.priority}`;
+            taskActions.appendChild(prioritySpan);
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '<i class="fa-regular fa-trash-can"></i>';
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.title = 'Delete task';
+            deleteBtn.onclick = (e) => { e.stopPropagation(); deleteTask(task.id); };
+            taskActions.appendChild(deleteBtn);
+            li.appendChild(taskActions);
+
+            return li;
+        }
+
+        /** Renders notes list */
+        function renderNotes() {
+             noteList.innerHTML = '';
+             noNotesMessage.style.display = notes.length === 0 ? 'block' : 'none';
+             noteList.style.display = notes.length > 0 ? 'block' : 'none';
+             notesSummaryHome.textContent = notes.length === 0 ? 'No notes yet' : `${notes.length} note${notes.length !== 1 ? 's' : ''}`;
+
+             const sortedNotes = [...notes].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+             sortedNotes.forEach(note => noteList.appendChild(createNoteElement(note)));
+             updateCounts();
+        }
+
+        /** Creates HTML for a single note */
+        function createNoteElement(note) {
+            const li = document.createElement('li');
+            li.className = 'note-item';
+            li.dataset.id = note.id;
+            li.title = 'View/Edit note (not implemented)';
+
+            const title = document.createElement('h3');
+            title.textContent = note.title || 'Untitled Note';
+            li.appendChild(title);
+
+            const content = document.createElement('p');
+            content.textContent = note.content;
+            li.appendChild(content);
+
+            const footer = document.createElement('div');
+            footer.className = 'note-footer';
+            const timestampSpan = document.createElement('span');
+            timestampSpan.innerHTML = `<i class="fa-regular fa-clock"></i> ${formatDateTime(note.timestamp, true)}`;
+            timestampSpan.title = `Created: ${formatDateTime(note.timestamp)}`;
+            footer.appendChild(timestampSpan);
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '<i class="fa-regular fa-trash-can"></i>';
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.title = 'Delete note';
+            deleteBtn.onclick = (e) => { e.stopPropagation(); deleteNote(note.id); };
+            footer.appendChild(deleteBtn);
+            li.appendChild(footer);
+
+            return li;
+        }
+
+        /** Adds a new task */
+        function addTask() {
+            const text = taskInput.value.trim();
+            if (text === '') return;
+            const newTask = {
+                id: Date.now(), text: text, priority: selectedPriority,
+                category: taskCategory.value,
+                reminder: taskReminderInput.value ? new Date(taskReminderInput.value).toISOString() : null,
+                completed: false, createdAt: new Date().toISOString()
+            };
+            tasks.push(newTask);
+            saveData(); renderTasks(); closeModal('add-task-modal');
+        }
+
+        /** Adds a new note */
+        function addNote() {
+             const title = noteTitleInput.value.trim();
+             const content = noteContentInput.value.trim();
+             if (content === '') return;
+             const newNote = {
+                id: Date.now(), title: title, content: content,
+                timestamp: new Date().toISOString()
+             };
+             notes.unshift(newNote);
+             saveData(); renderNotes(); closeModal('add-note-modal');
+        }
+
+        /** Toggles task completion */
+        function toggleTaskComplete(id) {
+             tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
+             saveData(); renderTasks();
+        }
+
+        /** Deletes a task */
+        function deleteTask(id) {
+            // Optional confirmation: if (!confirm("Delete task?")) return;
+            tasks = tasks.filter(task => task.id !== id);
+            saveData(); renderTasks();
+        }
+
+        /** Deletes a note */
+        function deleteNote(id) {
+            // Optional confirmation: if (!confirm("Delete note?")) return;
+            notes = notes.filter(note => note.id !== id);
+            saveData(); renderNotes();
+        }
+
+        /** Updates task counts */
+        function updateCounts() {
+            const remaining = tasks.filter(task => !task.completed).length;
+            const completed = tasks.length - remaining;
+            remainingTasksCount.textContent = remaining;
+            pendingCountHome.textContent = remaining;
+            completedCountHome.textContent = completed;
+        }
+
+        /** Formats date/time string */
+        function formatDateTime(isoString, short = false) {
+            if (!isoString) return '';
+            const date = new Date(isoString);
+            const options = short
+             ? { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }
+             : { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
+            try {
+                 return date.toLocaleTimeString('en-US', options);
+            } catch (e) {
+                 console.error("Error formatting date:", e, isoString);
+                 return "Invalid Date";
+            }
+        }
+
+        /** Toggles dark mode */
+        function toggleDarkMode() {
+            const isDarkMode = darkModeToggle.checked;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            try { localStorage.setItem('darkMode', isDarkMode); }
+            catch (e) { console.error("Could not save dark mode preference:", e); }
+        }
+
+        /** Exports data as JSON */
+        function exportData() {
+            try {
+                const dataToExport = {
+                    exportedAt: new Date().toISOString(), tasks: tasks, notes: notes,
+                    settings: { darkMode: darkModeToggle.checked, notificationsEnabled: document.getElementById('notifications-toggle').checked }
+                };
+                const dataStr = JSON.stringify(dataToExport, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const dataUrl = URL.createObjectURL(dataBlob);
+                const linkElement = document.createElement('a');
+                linkElement.href = dataUrl;
+                linkElement.download = `app_backup_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(linkElement); linkElement.click();
+                document.body.removeChild(linkElement); URL.revokeObjectURL(dataUrl);
+            } catch (e) { console.error("Error exporting data:", e); alert("Could not export data."); }
+        }
+
+        // --- Event Listeners Setup ---
+        function setupEventListeners() {
+             navItems.forEach(item => item.addEventListener('click', () => navigateTo(item.dataset.screen)));
+             addTaskButton.addEventListener('click', addTask);
+             addNoteButton.addEventListener('click', addNote);
+             darkModeToggle.addEventListener('change', toggleDarkMode);
+             [addTaskModalEl, addNoteModalEl].forEach(modal => modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(modal.id); }));
+             taskInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !addTaskButton.disabled) addTask(); });
+        }
+
+        // --- Initialization ---
+        function initializeApp() {
+            const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+            darkModeToggle.checked = savedDarkMode;
+            document.body.classList.toggle('dark-mode', savedDarkMode);
+
+            updateDateTime();
+            setInterval(updateDateTime, 30000); // Update time every 30s
+
+            setupEventListeners();
+            renderTasks();
+            renderNotes();
+            navigateTo(currentScreenId); // Activate initial screen
+        }
+
+        // Run initialization
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+    </script>
+</body>
+</html>
